@@ -1,0 +1,82 @@
+
+CREATE
+      (m:Player{name:"Lionel Messi"}),
+      (b:Team{name:"Barcelona"})
+WITH m, b
+CREATE (m)-[p:PlaysFor]->(b)
+SET p.since=date("2001-02-01")
+RETURN m, p, b
+
+
+
+
+
+
+
+
+
+// Create nodes
+CREATE (rob:Person{name:'Roberto'}), (isidro:Person{name:'Isidro'}),
+      (tony:Person{name:'Antonio'}), (nora:Person{name:'Nora'}),
+      (lily:Person{name:'Lilian'}), (freddy:Person{name:'Alfredo'}),
+      (lucas:Person{name:'Lucas'}), (mau:Person{name:'Mauricio'}),
+      (alb:Person{name:'Albina'}), (reg:Person{name:'Regina'}),
+      (j:Person{name:'Joaquín'}), (julian:Person{name:'Julián'})
+// Create relationships
+CREATE
+  (rob)-[:FriendsWith]->(isidro), (rob)-[:FriendsWith]->(tony), (rob)-[:FriendsWith]->(reg),
+  (rob)-[:FriendsWith]->(mau), (rob)-[:FriendsWith]->(julian),
+  (tony)-[:FriendsWith]->(reg), (tony)-[:FriendsWith]->(j),
+  (alb)-[:FriendsWith]->(reg), (lily)-[:FriendsWith]->(isidro), (lily)-[:FriendsWith]->(j),
+  (mau)-[:FriendsWith]->(lucas), (lucas)-[:FriendsWith]->(nora), (freddy)-[:FriendsWith]->(nora);
+
+
+
+
+
+
+
+
+
+
+// Query the relationships
+MATCH friendships=()-[:FriendsWith]-()
+RETURN friendships
+
+
+
+
+*Amigos de lucas 
+
+MATCH friends=(a:Person{name:'Lucas'})-[:FriendsWith]-(friend)
+RETURN friends
+
+
+
+*Amigos de los amigos de Lucas
+
+MATCH friends=(a:Person{name:'Lucas'})-[:FriendsWith*3]-(friend)
+RETURN friend.name
+
+
+
+*¿Cual es el camino más corto entre Joaquíny Lucas
+
+MATCH (lucas:Person{name:'Lucas'}), (joaquin:Person{name:'Joaquín'}),
+  p = shortestPath((lucas)-[*]-(joaquin))
+RETURN p
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,22 @@
+LOAD CSV WITH HEADERS FROM 'https://vbatushkov.bitbucket.io/log_of_calls.csv' AS line
+MERGE (c1:City { name: line.from_city })
+MERGE (p1:Person { name: line.from_name, number: line.from_number, gender: line.from_gender })
+MERGE (p1)-[:FROM]->(c1)
+MERGE (c2:City { name: line.to_city })
+MERGE (p2:Person { name: line.to_name, number: line.to_number, gender: line.to_gender })
+MERGE (p2)-[:FROM]->(c2)
+CREATE (c:Call { from: datetime(line.from_dt),
+		 to: datetime(line.to_dt),
+                 duration: duration.between(datetime(line.from_dt), datetime(line.to_dt)).minutes })
+CREATE (p1)-[:OUT]->(c)<-[:IN]-(p2);
+
+
+¿A quiénes llamo Robert?
+MATCH (p1:Person)-[:OUT]->(:Call)<-[:IN]-(p2:Person)
+WHERE p1.name = "Robert"
+RETURN p2
+
+¿Cuántas llamadas hizo Robert y cuál fue la máxima duración?
+MATCH (p1:Person)-[:OUT]->(c:Call)
+WHERE p1.name = "Robert"
+RETURN p1.name as name, count(c) as total_calls, max(c.duration) as max_duration

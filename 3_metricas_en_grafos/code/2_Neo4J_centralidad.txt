@@ -1,0 +1,102 @@
+Degree-------------------------------------------------------------
+
+CREATE
+	(uno:Number{id:"1"}),
+	(dos:Number{id:"2"}),
+	(tres:Number{id:"3"}),
+	(cuatro:Number{id:"4"}),
+	(cinco:Number{id:"5"})
+
+CREATE
+	(uno)-[:CONECTA]->(cuatro),
+	(dos)-[:CONECTA]->(cuatro),
+	(tres)-[:CONECTA]->(cuatro),
+	(cinco)-[:CONECTA]->(tres)
+
+
+MATCH (n:Number)
+RETURN n.id AS NAME,
+size((n)-[:CONECTA]->()) AS outDegree,
+size((n)<-[:CONECTA]-()) AS inDegree,
+size((n)-[:CONECTA]-()) AS Degree
+
+Betweenness-------------------------------------------------------------
+
+CREATE
+	(uno:Number{id:"1"}),
+	(dos:Number{id:"2"}),
+	(tres:Number{id:"3"}),
+	(cuatro:Number{id:"4"}),
+	(cinco:Number{id:"5"}),
+	(seis:Number{id:"6"})
+
+CREATE
+	(uno)-[:CONECTA]->(dos),
+	(uno)-[:CONECTA]->(cinco),
+	(dos)-[:CONECTA]->(cinco),
+	(dos)-[:CONECTA]->(tres),
+	(tres)-[:CONECTA]->(cuatro),
+	(cinco)-[:CONECTA]->(cuatro),
+	(cuatro)-[:CONECTA]->(seis)
+
+
+CALL algo.betweenness.stream("Number", "CONECTA", {direction:"out"})
+YIELD nodeId, centrality
+MATCH (number:Number) WHERE id(number) = nodeId
+RETURN number.id AS user,centrality
+ORDER BY centrality DESC;
+
+
+CALL algo.betweenness.stream("Number", "CONECTA", {direction:"both"})
+YIELD nodeId, centrality
+MATCH (number:Number) WHERE id(number) = nodeId
+RETURN number.id AS user,centrality
+ORDER BY centrality DESC;
+
+
+
+Closeness-------------------------------------------------------------
+
+CREATE
+	(uno:Number{id:"1"}),
+	(dos:Number{id:"2"}),
+	(tres:Number{id:"3"}),
+	(cuatro:Number{id:"4"}),
+	(cinco:Number{id:"5"})
+
+CREATE
+	(uno)-[:CONECTA]->(dos),
+	(uno)-[:CONECTA]->(cuatro),
+	(uno)-[:CONECTA]->(tres),
+	(dos)-[:CONECTA]->(cinco),
+	(cuatro)-[:CONECTA]->(cinco)
+
+
+CALL algo.closeness.stream("Number", "CONECTA")
+YIELD nodeId, centrality
+MATCH (n:Number) WHERE id(n) = nodeId
+RETURN n.id AS node, centrality
+ORDER BY centrality DESC
+LIMIT 3;
+
+EigenValue-------------------------------------------------------------
+
+CREATE
+	(uno:Number{id:"1"}),
+	(dos:Number{id:"2"}),
+	(tres:Number{id:"3"})
+
+CREATE
+	(uno)-[:CONECTA]->(dos),
+	(uno)-[:CONECTA]->(tres),
+	(dos)-[:CONECTA]->(uno),
+	(tres)-[:CONECTA]->(dos)
+
+
+CALL algo.eigenvector.stream("Number", "CONECTA", {})
+YIELD nodeId, score
+RETURN algo.asNode(nodeId).id AS number,score
+ORDER BY score DESC
+
+
+https://developer.twitter.com/en/apps

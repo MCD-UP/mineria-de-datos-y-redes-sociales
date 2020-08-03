@@ -1,0 +1,158 @@
+
+CREATE (john:Person {name: 'John'})
+CREATE (joe:Person {name: 'Joe'})
+CREATE (steve:Person {name: 'Steve'})
+CREATE (sara:Person {name: 'Sara'})
+CREATE (maria:Person {name: 'Maria'})
+CREATE (john)-[:FRIEND]->(joe)-[:FRIEND]->(steve)
+CREATE (john)-[:FRIEND]->(sara)-[:FRIEND]->(maria)
+
+// Consulta 1
+MATCH (john {name: 'John'})-[:FRIEND]->()-[:FRIEND]->(fof)
+RETURN john.name, fof.name
+
+//Consulta 2
+MATCH (user)-[:FRIEND]->(follower)
+WHERE user.name IN ['Joe', 'John', 'Sara', 'Maria', 'Steve'] AND follower.name =~ 'S.*'
+RETURN user.name, follower.name
+
+//Consulta 3
+MATCH (n {name: 'John'})-[:FRIEND]-(friend)
+WITH n, count(friend) AS friendsCount
+WHERE friendsCount > 3
+RETURN n, friendsCount
+
+//Consulta 4
+
+MATCH (n {name: 'John'})-[:FRIEND]-(friend)
+WITH n, count(friend) AS friendsCount
+SET n.friendsCount = friendsCount
+RETURN n.friendsCount
+
+//Consulta 5
+MATCH friendships=()-[:FRIEND]-()
+RETURN friendships.name
+
+
+
+// Ejemplo 2
+
+
+CREATE (A:Person {name: 'Alice', eyes: 'brown', age: '38'})
+CREATE (B:Person {name: 'Bob', eyes: 'blue', age: '25'})
+CREATE (C:Person {name: 'Charlie', eyes: 'green', age: '53'})
+CREATE (D:Person {name: 'Daniel', eyes: 'brown'})
+CREATE (E:Person {array: ['one','two','three'], name: 'Eskil', eyes: 'blue', age: '41'})
+CREATE (A)-[:KNOWS]->(C)-[:KNOWS]->(D)
+CREATE (A)-[:KNOWS]->(B)-[:KNOWS]->(D)
+CREATE (B)-[:KNOWS]->(E)
+
+MATCH conoce=()-[:KNOWS]-()
+RETURN conoce
+
+//Consulta
+MATCH (n)
+RETURN
+CASE n.eyes
+WHEN 'blue'
+THEN 1
+WHEN 'brown'
+THEN 2
+ELSE 3 END AS result
+
+//Consulta
+MATCH (n)
+RETURN
+CASE
+WHEN n.eyes = 'blue'
+THEN 1
+WHEN n.age < 40
+THEN 2
+ELSE 3 END AS result
+
+//Consulta
+MATCH (n)
+RETURN n.name,
+CASE n.age
+WHEN n.age IS NULL THEN -1
+ELSE n.age END AS current_age
+
+//Consulta
+MATCH (n)
+RETURN n.name,
+CASE
+WHEN n.age IS NULL THEN -1
+ELSE n.age END AS current_age
+
+
+
+
+//Crear
+CREATE (n),(m)
+CREATE (n:Person)
+CREATE (n:Person:Mexican)
+CREATE (n:Person { name: 'Andy', title: 'Developer' })
+
+CREATE (a { name: 'Andy' })
+RETURN a.name
+
+\\Borrar
+
+MATCH (n:Person { name: 'UNKNOWN' })
+DELETE n
+
+MATCH (n)
+DETACH DELETE n
+
+MATCH (n { name: 'Andy' })
+DETACH DELETE n
+
+MATCH (n { name: 'Andy' })-[r:KNOWS]->()
+DELETE r
+
+//SET
+
+MATCH (n { name: 'Bob' })
+SET n.surname = 'Taylor'
+RETURN n.name, n.surname
+
+
+MATCH (n { name: 'Bob' })
+SET (
+CASE
+WHEN n.age = 36
+THEN n END ).worksIn = 'UP'
+RETURN n.name, n.worksIn
+
+
+MATCH (n { name: 'Andy' })
+SET (
+CASE
+WHEN n.age = 55
+THEN n END ).worksIn = 'UP'
+RETURN n.name, n.worksIn
+
+
+
+//Betweenness
+MERGE (nAlice:User {id:"Alice"})
+MERGE (nBridget:User {id:"Bridget"})
+MERGE (nCharles:User {id:"Charles"})
+MERGE (nDoug:User {id:"Doug"})
+MERGE (nMark:User {id:"Mark"})
+MERGE (nMichael:User {id:"Michael"})
+MERGE (nAlice)-[:MANAGES]->(nBridget)
+MERGE (nAlice)-[:MANAGES]->(nCharles)
+MERGE (nAlice)-[:MANAGES]->(nDoug)
+MERGE (nMark)-[:MANAGES]->(nAlice)
+MERGE (nCharles)-[:MANAGES]->(nMichael);
+
+
+MATCH relationships=()-[:MANAGES]-()
+RETURN relationships
+
+CALL algo.betweenness.stream("User", "MANAGES", {direction:"out"})
+YIELD nodeId, centrality
+MATCH (user:User) WHERE id(user) = nodeId
+RETURN user.id AS user,centrality
+ORDER BY centrality DESC;

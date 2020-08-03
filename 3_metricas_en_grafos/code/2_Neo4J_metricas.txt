@@ -1,0 +1,70 @@
+LOAD CSV WITH HEADERS FROM "file:///telemedicine_data4.csv" AS row
+WITH row WHERE NOT row.place IS NULL and NOT row.hashtags IS NULL and NOT row.user_mentions IS null
+
+MERGE (source:Source {s:row.source })
+MERGE (hashtags:Hashtags {h:row.hashtags })
+MERGE (author:Original_author {a:row.original_author })
+MERGE (place:Place {p:row.place })
+
+MERGE (tweet:Tweet {
+    text: row.clean_text
+   , polarity: row.polarity
+   , favoriteCount: row.favorite_count
+   , retweet: row.retweet_count
+   , createdDate: row.created_at
+   , id: row.id
+   , place: row.place
+   , source: row.source
+   , author: row.original_author
+   , hashtags: row.hashtags
+   , mentions: row.user_mentions
+})
+
+MERGE (tweet)-[:POSTED_VIA]->(source)
+MERGE (tweet)-[:HAS_TAG]->(hashtags)
+MERGE (author)-[:POSTED]->(tweet)
+MERGE (tweet)-[:MENTIONS]->(author)
+MERGE (tweet)-[:EMITTED]->(place)
+
+
+
+CALL db.schema() //
+
+
+//Overview
+MATCH (t)
+RETURN LABELS(t), COUNT(*) AS count
+ORDER BY count DESC
+
+//Bots
+MATCH (a:Original_author)-[:POSTED]->(t:Tweet)-[:EMITTED]->(l:Place)
+RETURN a AS user, count(t) AS nTweets, t AS tweet, count(a) AS nUsers
+ORDER BY nTweets DESC
+
+//Word
+MATCH p_OUT=(:Original_author)-[:POSTED]->(t:Tweet)-[:EMITTED]->(l:Place)
+WHERE t.hashtags CONTAINS 'AI'
+return p_OUT
+
+//Word II
+MATCH (a:Original_author)-[:POSTED]->(t:Tweet)-[:HASH_TAG]->(hashtag:Hashtags {h: "AI"})
+RETURN * LIMIT 50
+
+
+//Most frequent Hashtags
+MATCH (ht:Hashtags)<-[:HASH_TAG]-(tw:Tweet)<-[:POSTED]-(:Original_author)
+WITH ht, COUNT(tw) AS num ORDER BY num DESC
+RETURN ht.h AS hashtag, num LIMIT 10
+
+//Most frequent via
+MATCH (:Original_author)-[:POSTED]->(tw:Tweet)-[:POSTED_VIA]->(s:Source)
+RETURN s.s AS source, COUNT(tw) AS tweets
+ORDER BY tweets DESC
+
+
+//Eigenvalue centrality (PageRank)
+CALL algo.pageRank("MATCH (a:Original_author) RETURN id(a) AS id","MATCH (r1:Original_author)-[:POSTED]->(:Tweet)<-[:POSTED]-(r2:Original_author) RETURN id(r2) as source, id(r1) as target", {graph:'cypher'})
+
+//Find users with highest score
+MATCH (a:Original_author) WHERE EXISTS(a.pagerank)
+RETURN a.a AS author, a.pagerank AS pagerank ORDER BY pagerank DESC LIMIT 25
